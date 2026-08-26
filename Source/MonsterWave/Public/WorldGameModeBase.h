@@ -6,11 +6,63 @@
 #include "GameFramework/GameModeBase.h"
 #include "WorldGameModeBase.generated.h"
 
-/**
- * 
- */
+USTRUCT(BlueprintType)
+struct FWaveData
+{
+	GENERATED_BODY()
+
+public:
+
+	FWaveData() : Duration(30.0f), SpawnCount(10) {}
+
+	FWaveData(float InDuration, int32 InSpawnCount) : Duration(InDuration), SpawnCount(InSpawnCount) {}
+
+
+	//제한시간
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
+	float Duration;
+
+	// 생성할 아이템 수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
+	int32 SpawnCount;
+};
+
+
 UCLASS()
 class MONSTERWAVE_API AWorldGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
+
+
+public:
+
+	AWorldGameModeBase();
+
+
+protected:
+
+	virtual void BeginPlay() override;
+
+
+	//설정 목록
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
+	TArray<FWaveData> WaveDatas;
+
+
+private:
+
+	int32 CurrentWaveIndex;
+
+	FTimerHandle WaveTimerHandle;
+
+	void StartWave();
+
+
+	void UpdateWaveTimer();
+
+
+	void EndWave();
+
+
+	void CompleteLevel();
 };
