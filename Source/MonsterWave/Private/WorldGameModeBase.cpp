@@ -41,7 +41,7 @@ void AWorldGameModeBase::StartWave()
 	
 
 	//gamerstate 가져오기
-	AMonsterWaveGameStateBase* GameState = GetGameState<AMonsterWaveGameStateBase>();
+	AMonsterWaveGameStateBase* MWGameState = GetGameState<AMonsterWaveGameStateBase>();
 
 	if (!GameState)
 	{
@@ -58,9 +58,9 @@ void AWorldGameModeBase::StartWave()
 	const FWaveData& CurrentWaveData = WaveDatas[CurrentWaveIndex];
 
 	//웨이브 정보 기록
-	GameState->SetCurrentWave(CurrentWaveIndex + 1); //웨이브는 1부터 시작
+	MWGameState->SetCurrentWave(CurrentWaveIndex + 1); //웨이브는 1부터 시작
 
-	GameState->SetRemainingTime(CurrentWaveData.Duration);
+	MWGameState->SetRemainingTime(CurrentWaveData.Duration);
 	// 로그
 	UE_LOG(
 		LogTemp,
@@ -99,8 +99,8 @@ void AWorldGameModeBase::StartWave()
 
 void AWorldGameModeBase::UpdateWaveTimer()
 {
-	AMonsterWaveGameStateBase* GameState = GetGameState<AMonsterWaveGameStateBase>();
-	if (!GameState)
+	AMonsterWaveGameStateBase* MWGameState = GetGameState<AMonsterWaveGameStateBase>();
+	if (!MWGameState)
 	{
 		UE_LOG(
 			LogTemp,
@@ -110,9 +110,9 @@ void AWorldGameModeBase::UpdateWaveTimer()
 		return;
 	}
 
-	float NewTime = GameState->GetRemainingTime() - 1.0f;
+	float NewTime = MWGameState->GetRemainingTime() - 1.0f;
 
-	GameState->SetRemainingTime(NewTime);
+	MWGameState->SetRemainingTime(NewTime);
 
 	UE_LOG(
 		LogTemp,

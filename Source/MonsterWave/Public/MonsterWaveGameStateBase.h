@@ -36,25 +36,11 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Game State")
 	int32 GetScore() const;
 
-
-
 protected:
-	UPROPERTY(ReplicatedUsing = OnRep_CurrentWave, BlueprintReadOnly, Category = "Game State")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game State")
 	int32 CurrentWave;
-	UPROPERTY(ReplicatedUsing = OnRep_RemainingTime, BlueprintReadOnly, Category = "Game State")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game State")
 	float RemainingTime;
-	UPROPERTY(ReplicatedUsing = OnRep_Score, BlueprintReadOnly, Category = "Game State")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game State")
 	int32 Score;
-
-
-
-	UFUNCTION()
-	void OnRep_CurrentWave();
-	UFUNCTION()
-	void OnRep_RemainingTime();
-	UFUNCTION()
-	void OnRep_Score();
-
-
-
 };
