@@ -4,7 +4,7 @@
 
 AMonster::AMonster()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 }
 
