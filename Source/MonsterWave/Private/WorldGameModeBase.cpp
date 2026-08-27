@@ -38,10 +38,10 @@ void AWorldGameModeBase::StartWave()
 		CompleteLevel();
 		return;
 	}
-
+	
 
 	//gamerstate 가져오기
-	AMonsterWaveGameStateBase* MWGameState = GetGameState<AMonsterWaveGameStateBase>();
+	AMonsterWaveGameStateBase* GameState = GetGameState<AMonsterWaveGameStateBase>();
 
 	if (!GameState)
 	{
@@ -60,7 +60,7 @@ void AWorldGameModeBase::StartWave()
 	//웨이브 정보 기록
 	GameState->SetCurrentWave(CurrentWaveIndex + 1); //웨이브는 1부터 시작
 
-			
+	GameState->SetRemainingTime(CurrentWaveData.Duration);
 	// 로그
 	UE_LOG(
 		LogTemp,
