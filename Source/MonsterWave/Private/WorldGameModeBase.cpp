@@ -1,9 +1,11 @@
 #include "WorldGameModeBase.h"
 
 #include "MonsterWaveGameStateBase.h"
+#include "Monster.h"
 
 #include "TimerManager.h"
 #include "Engine/Engine.h"
+
 
 
 AWorldGameModeBase::AWorldGameModeBase()
@@ -43,7 +45,7 @@ void AWorldGameModeBase::StartWave()
 	//gamerstate 가져오기
 	AMonsterWaveGameStateBase* MWGameState = GetGameState<AMonsterWaveGameStateBase>();
 
-	if (!GameState)
+	if (!MWGameState)
 	{
 		UE_LOG(
 			LogTemp,
@@ -57,10 +59,22 @@ void AWorldGameModeBase::StartWave()
 	//현재 웨이브 설정
 	const FWaveData& CurrentWaveData = WaveDatas[CurrentWaveIndex];
 
+
+
+
 	//웨이브 정보 기록
 	MWGameState->SetCurrentWave(CurrentWaveIndex + 1); //웨이브는 1부터 시작
-
 	MWGameState->SetRemainingTime(CurrentWaveData.Duration);
+
+
+
+
+	for (int32 i = 0; i < CurrentWaveData.SpawnCount; ++i)
+	{
+		SpawnMonsters();
+	}
+
+
 	// 로그
 	UE_LOG(
 		LogTemp,
@@ -177,4 +191,24 @@ void AWorldGameModeBase::CompleteLevel()
 			TEXT("Level Complete!")
 		);
 	}
+}
+
+
+void AWorldGameModeBase::SpawnMonsters()
+{
+	if (!MonsterClass)
+	{
+		UE_LOG(
+			LogTemp,
+			Error,
+			TEXT("MonsterClass is not set.")
+		);
+		return;
+	}
+
+	FVector SpawnLocation(0.0f, 0.0f, 100.0f); // 예시 위치, 필요에 따라 조정
+	FRotator SpawnRotation = FRotator::ZeroRotator;
+
+
+	GetWorld()->SpawnActor<AMonster>(MonsterClass, SpawnLocation, SpawnRotation);
 }

@@ -6,6 +6,9 @@
 #include "GameFramework/GameModeBase.h"
 #include "WorldGameModeBase.generated.h"
 
+
+class AMonster;
+
 USTRUCT(BlueprintType)
 struct FWaveData
 {
@@ -48,6 +51,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
 	TArray<FWaveData> WaveDatas;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
+	TSubclassOf<class AMonster> MonsterClass;
+
+
 
 private:
 
@@ -65,4 +72,8 @@ private:
 
 
 	void CompleteLevel();
+
+	void SpawnMonsters();
+
+	
 };
