@@ -2,11 +2,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "GameFramework/Character.h"
 #include "Monster.generated.h"
 
 UCLASS()
-class MONSTERWAVE_API AMonster : public AActor
+class MONSTERWAVE_API AMonster : public ACharacter
 {
 	GENERATED_BODY()
 	
@@ -18,10 +18,4 @@ protected:
 
 public:
 	virtual void Tick(float DeltaTime) override;
-
-
-private:
-	EAutoPossessAI AutoPossessAI;
-	TSubclassOf<AMonsterAIController> AIControllerClass;
-
 };
