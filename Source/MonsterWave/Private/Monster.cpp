@@ -1,11 +1,16 @@
 
 #include "Monster.h"
+#include "MonsterAIController.h"
+
 
 
 AMonster::AMonster()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
+	AIControllerClass = AMonsterAIController::StaticClass();
+
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
 
