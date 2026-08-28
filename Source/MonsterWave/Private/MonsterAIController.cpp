@@ -5,9 +5,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
 
-void AMonsterAIController::BeginPlay()
+void AMonsterAIController::OnPossess(APawn* InPawn)
 {
-	Super::BeginPlay();
+	Super::OnPossess(InPawn);
 	
 	ACharacter* PlayerCharacter = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
 	
