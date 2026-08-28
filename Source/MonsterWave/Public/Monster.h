@@ -13,4 +13,9 @@ class MONSTERWAVE_API AMonster : public AActor
 public:	
 	AMonster();
 
+protected:
+	virtual void BeginPlay() override;
+
+public:
+	virtual void Tick(float DeltaTime) override;
 };

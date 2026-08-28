@@ -9,3 +9,13 @@ AMonster::AMonster()
 }
 
 
+void AMonster::BeginPlay()
+{
+	Super::BeginPlay();
+
+}
+
+void AMonster::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+}
