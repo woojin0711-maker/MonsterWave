@@ -2,6 +2,9 @@
 
 #include "MonsterWaveGameStateBase.h"
 #include "Monster.h"
+#include "Blueprint/UserWidget.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/PlayerController.h"
 
 #include "TimerManager.h"
 #include "Engine/Engine.h"
@@ -28,6 +31,25 @@ void AWorldGameModeBase::BeginPlay()
 	Super::BeginPlay();
 	//웨이브 시작
 
+	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+
+	if (PlayerController && HUDWidgetClass)
+	{
+		HUDWidgetInstance = CreateWidget<UUserWidget>(PlayerController, HUDWidgetClass);
+
+		if (HUDWidgetInstance)
+		{
+			HUDWidgetInstance->AddToViewport();
+		}
+		else
+		{
+			UE_LOG(
+				LogTemp,
+				Error,
+				TEXT("Failed to create HUD widget instance.")
+			);
+		}
+	}
 	CurrentWaveIndex = 0;
 
 	StartWave();
@@ -66,13 +88,21 @@ void AWorldGameModeBase::StartWave()
 	MWGameState->SetCurrentWave(CurrentWaveIndex + 1); //웨이브는 1부터 시작
 	MWGameState->SetRemainingTime(CurrentWaveData.Duration);
 
+	RemainingMonsterSpawnCount = CurrentWaveData.SpawnCount;
 
+	SpawnNextMonster();
 
-
-	for (int32 i = 0; i < CurrentWaveData.SpawnCount; ++i)
+	if (RemainingMonsterSpawnCount > 0)
 	{
-		SpawnMonsters();
+		GetWorldTimerManager().SetTimer(
+			MonsterSpawnTimerHandle,
+			this,
+			&AWorldGameModeBase::SpawnNextMonster,
+			SpawnInterval,
+			true
+		);
 	}
+
 
 
 	// 로그
@@ -149,6 +179,11 @@ void AWorldGameModeBase::UpdateWaveTimer()
 
 void AWorldGameModeBase::EndWave()
 {
+	GetWorldTimerManager().ClearTimer(MonsterSpawnTimerHandle);
+	RemainingMonsterSpawnCount = 0;
+
+	ClearSpawnedMonsters();
+
 	UE_LOG(
 		LogTemp,
 		Warning,
@@ -193,6 +228,21 @@ void AWorldGameModeBase::CompleteLevel()
 	}
 }
 
+void AWorldGameModeBase::SpawnNextMonster()
+{
+	if (RemainingMonsterSpawnCount <= 0)
+	{
+		GetWorldTimerManager().ClearTimer(MonsterSpawnTimerHandle);
+		return;
+	}
+	SpawnMonsters();
+	RemainingMonsterSpawnCount--;
+
+	if (RemainingMonsterSpawnCount <= 0)
+	{
+		GetWorldTimerManager().ClearTimer(MonsterSpawnTimerHandle);
+	}
+}
 
 void AWorldGameModeBase::SpawnMonsters()
 {
@@ -206,9 +256,160 @@ void AWorldGameModeBase::SpawnMonsters()
 		return;
 	}
 
-	FVector SpawnLocation(0.0f, 0.0f, 100.0f); // 예시 위치, 필요에 따라 조정
-	FRotator SpawnRotation = FRotator::ZeroRotator;
+
+	TArray<AActor*> SpawnPoints;
+	UGameplayStatics::GetAllActorsWithTag(
+		GetWorld(),
+		TEXT("MonsterSpawn"),
+		SpawnPoints
+	);
+
+	if (SpawnPoints.IsEmpty())
+	{
+		UE_LOG(
+			LogTemp,
+			Error,
+			TEXT("No actor with the 'MonsterSpawn' tag was found.")
+		);
+		return;
+	}
+
+	AActor* SelectedSpawnPoint = SpawnPoints[FMath::RandRange(0, SpawnPoints.Num() - 1)];
+	if (!IsValid(SelectedSpawnPoint))
+	{
+		return;
+	}
+
+	FActorSpawnParameters SpawnParams;
+
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	const FVector2D RandomOffset = FMath::RandPointInCircle(SpawnRadius);
+
+	const FVector SpawnLocation = SelectedSpawnPoint->GetActorLocation() + FVector(RandomOffset.X, RandomOffset.Y, 0.0f);
+
+	AMonster* SpawnedMonster = GetWorld()->SpawnActor<AMonster>(
+		MonsterClass,
+		SpawnLocation,
+		FRotator::ZeroRotator,
+		SpawnParams
+	);
 
 
-	GetWorld()->SpawnActor<AMonster>(MonsterClass, SpawnLocation, SpawnRotation);
+
+	if (IsValid(SpawnedMonster))
+	{
+		SpawnedMonsters.Emplace(SpawnedMonster);
+	}
+}
+
+
+void AWorldGameModeBase::ClearSpawnedMonsters()
+{
+	for (TWeakObjectPtr<AMonster> MonsterPtr : SpawnedMonsters)
+	{
+		if (AMonster* Monster = MonsterPtr.Get())
+		{
+			Monster->Destroy();
+		}
+	}
+	SpawnedMonsters.Empty();
+}
+
+void AWorldGameModeBase::ShowGameOver()
+{
+	if (GameOverWidgetInstance)
+	{
+		return;
+	}
+
+	GetWorldTimerManager().ClearTimer(WaveTimerHandle);
+	GetWorldTimerManager().ClearTimer(MonsterSpawnTimerHandle);
+
+	RemainingMonsterSpawnCount = 0;
+
+	ClearSpawnedMonsters();
+
+	if (HUDWidgetInstance)
+	{
+		HUDWidgetInstance->RemoveFromParent();
+		HUDWidgetInstance = nullptr;
+	}
+
+	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	if (!PlayerController || !GameOverWidgetClass)
+	{
+		return;
+	}
+
+	GameOverWidgetInstance = CreateWidget<UUserWidget>(PlayerController, GameOverWidgetClass);
+	if (!GameOverWidgetInstance)
+	{
+		return;
+	}
+
+	GameOverWidgetInstance->AddToViewport(10);
+
+	FInputModeUIOnly InputMode;
+
+	InputMode.SetWidgetToFocus(GameOverWidgetInstance->TakeWidget());
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	PlayerController->SetInputMode(InputMode);
+	PlayerController->bShowMouseCursor = true;
+}
+
+void AWorldGameModeBase::RestartCurrentLevel()
+{
+	if (GameOverWidgetInstance)
+	{
+		GameOverWidgetInstance->RemoveFromParent();
+		GameOverWidgetInstance = nullptr;
+	}
+
+	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	if (PlayerController)
+	{
+		FInputModeGameOnly InputMode;
+		PlayerController->SetInputMode(InputMode);
+		PlayerController->bShowMouseCursor = false;
+	}
+
+	const FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(GetWorld(), true);
+	UGameplayStatics::OpenLevel(GetWorld(), FName(*CurrentLevelName));
+}
+
+void AWorldGameModeBase::NotifyMonsterDied(AMonster* DeadMonster)
+{
+	SpawnedMonsters.RemoveAll(
+		[DeadMonster](const TWeakObjectPtr<AMonster>& MonsterPtr)
+		{
+			return !MonsterPtr.IsValid() || MonsterPtr.Get() == DeadMonster;
+		}
+	);
+
+	// 아직 생성될 몬스터가 남았으면 기다린다.
+	if (RemainingMonsterSpawnCount > 0)
+	{
+		return;
+	}
+
+	// 살아 있는 몬스터가 남았으면 기다린다.
+	if (!SpawnedMonsters.IsEmpty())
+	{
+		return;
+	}
+
+	AMonsterWaveGameStateBase* MWGameState =
+		GetGameState<AMonsterWaveGameStateBase>();
+
+	if (MWGameState && MWGameState->GetRemainingTime() > 5.0f)
+	{
+		MWGameState->SetRemainingTime(5.0f);
+
+		UE_LOG(
+			LogTemp,
+			Warning,
+			TEXT("All monsters defeated. Remaining time changed to 5 seconds.")
+		);
+	}
 }

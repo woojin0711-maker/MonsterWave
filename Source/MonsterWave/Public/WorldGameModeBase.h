@@ -6,7 +6,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "WorldGameModeBase.generated.h"
 
-
+class UUserWidget;
 class AMonster;
 
 USTRUCT(BlueprintType)
@@ -41,6 +41,10 @@ public:
 
 	AWorldGameModeBase();
 
+	UFUNCTION(BlueprintCallable, Category = "Game")
+	void ShowGameOver();
+
+	void NotifyMonsterDied(AMonster* DeadMonster);
 
 protected:
 
@@ -54,26 +58,58 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
 	TSubclassOf<class AMonster> MonsterClass;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave|Spawn")
+	FVector SpawnCenter = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave|Spawn")
+	float SpawnRadius = 2000.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave|Spawn")
+	float SpawnInterval = 0.5f;
+
+	UPROPERTY()
+	FTimerHandle SpawnTimerHandle;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UUserWidget> HUDWidgetClass;
+
+	UPROPERTY()
+	TObjectPtr<UUserWidget> HUDWidgetInstance;
+
+	TArray<TWeakObjectPtr<AMonster>> SpawnedMonsters;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UUserWidget> GameOverWidgetClass;
+
+	UPROPERTY()
+	TObjectPtr<UUserWidget> GameOverWidgetInstance;
+
+	UFUNCTION(BlueprintCallable, Category = "Game")
+	void RestartCurrentLevel();
 
 
 private:
 
 	int32 CurrentWaveIndex;
 
+	int32 RemainingMonsterSpawnCount = 0;
+
 	FTimerHandle WaveTimerHandle;
+
+	FTimerHandle MonsterSpawnTimerHandle;
 
 	void StartWave();
 
-
 	void UpdateWaveTimer();
 
-
 	void EndWave();
-
 
 	void CompleteLevel();
 
 	void SpawnMonsters();
 
+	void ClearSpawnedMonsters();
+
+	void SpawnNextMonster();
 	
 };
